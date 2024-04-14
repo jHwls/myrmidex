@@ -1,8 +1,8 @@
 defmodule Myrmidex do
   @moduledoc """
   A light wrapper around `StreamData`. Generate any data on the fly, or model
-  the underlying types and common fields of domain-specific structs or schemas, 
-  optionally using custom generators. Aimed at speeding up test setup, and 
+  the underlying types and common fields of domain-specific structs or schemas,
+  optionally using custom generators. Aimed at speeding up test setup, and
   maximizing reusability of factory data throughout testing and development.
 
   Uses reflection and composition to provide sensible defaults and allow for
@@ -16,7 +16,7 @@ defmodule Myrmidex do
       iex> "🐜"
       ...> |> Myrmidex.many()
       ...> |> Enum.join(" ")
-      "🐩 🐰 🐡 🐂 🐏 🐁 🐋 🐤 🐪 🐭 🐏 🐨 🐋 🐁 🐚 🐤"  
+      "🐩 🐰 🐡 🐂 🐏 🐁 🐋 🐤 🐪 🐭 🐏 🐨 🐋 🐁 🐚 🐤"
 
   Optionally, constrain or altogether prevent generation:
 
@@ -25,6 +25,23 @@ defmodule Myrmidex do
       ...> |> Myrmidex.many()
       ...> |> Enum.join(" ")
       "🐜 🐜 🐜 🐜 🐜 🐜 🐜 🐜 🐜 🐜"
+
+      iex> %{species: species_generator()}
+      ...> |> Myrmidex.affix(kingdom: "Animalia", class: "Insecta")
+      ...> |> Myrmidex.many()
+      [
+        %{
+          kingdom: "Animalia",
+          class: "Insecta",
+          species: "🪰"
+        },
+        %{
+          kingdom: "Animalia",
+          class: "Insecta",
+          species: "🐞"
+        },
+        ...
+      ]
 
   ## More useful examples
 
@@ -43,7 +60,7 @@ defmodule Myrmidex do
       field :created, :utc_datetime
       field :currency, :string
       ...
-    end  
+    end
 
   end
   ```
@@ -63,11 +80,11 @@ defmodule Myrmidex do
 
   The `currency` field string generation isn't particularly useful. Let's pin
   that value using `affix/2` and then generate a list of attrs with string keys
-  we can  use to test changeset functions:
+  we can use to test changeset functions:
 
-      iex> %BalanceTransaction{}      
+      iex> %BalanceTransaction{}
       ...> |> Myrmidex.affix(currency: "usd")
-      ...> |> Myrmidex.many(keys: :string)
+      ...> |> Myrmidex.many(attr_keys: :string)
       [
         %{
           "id" => "7d8979b6-e99b-48d3-8acb-862866f6630a",
@@ -86,14 +103,17 @@ defmodule Myrmidex do
 
   Helpful, but we might want to customize the binary id generation, or handle
   other specifics of this api. We can do this with a `Myrmidex.GeneratorSchema`.
+
   Ideally, generator schemas are broad enough to cover segments of the schemas
   and/or structs in our application or domain, reducing the repetition of
   ad hoc test-data definitions throughout the codebase.
 
   If we're setting up tests or using this regularly, or we need generated fields
-  to build upon or be constrained by one another (e.g. the two date fields in the 
-  example), we'd potentially want to go one step further and setup up a 
-  `Myrmidex.Factory`. Factories are also the place to define a relationship
+  to build upon or be constrained by one another (e.g. the two date fields in the
+  example), we'd potentially want to go one step further and setup up a
+  `Myrmidex.Factory`.
+
+  Factories are also the place to define a relationship
   of a schema or set of schemas to a datastore.
 
   ## Options
@@ -103,23 +123,26 @@ defmodule Myrmidex do
   #{NimbleOptions.docs(Myrmidex.Opts.schema())}
 
   """
+  import Myrmidex.GeneratorSchema, only: [is_mappable: 1]
   alias StreamData, as: SD
 
   @default_count 2..20
 
+  defdelegate via(stream, via_fun), to: Myrmidex.Helpers.StreamData
+
   @doc """
-  The main entry point to working with stream_data. Produces stream_data from 
-  `term`, implementing inferred stream_data types for fields. Currently supported 
-  types are: 
+  The main entry point to working with stream data. Produces stream data from
+  `term`, implementing inferred stream data types for fields.
 
   ### Examples
 
-      iex> animojis = Myrmidex.to_stream("🐜")
+      iex> alias Myrmidex.Support.DocsGeneratorSchema
+      iex> animojis = Myrmidex.to_stream("🐜", generator_schema: DocsGeneratorSchema)
       iex> animoji = Myrmidex.one(animojis)
       iex> [ascii_code] = String.to_charlist(animoji)
       iex> ascii_code in 128000..128048
       true
-    
+
   """
   def to_stream(term, opts \\ []) do
     {generator_schema, opts} =
@@ -136,7 +159,8 @@ defmodule Myrmidex do
 
   ### Examples
 
-      iex> animoji = Myrmidex.one("🐜")
+      iex> alias Myrmidex.Support.DocsGeneratorSchema
+      iex> animoji = Myrmidex.one("🐜", generator_schema: DocsGeneratorSchema)
       iex> [ascii_code] = String.to_charlist(animoji)
       iex> ascii_code in 128000..128048
       true
@@ -171,15 +195,16 @@ defmodule Myrmidex do
   end
 
   @doc """
-  Build a stream of `term`, and then emit a list of size `count` of 
-  representative data. Like `&take_many/2`, may also accept a range.
+  Build a stream of `term`, and then emit a list of size `count` of
+  representative data. Like `many/2`, may also accept a range.
 
   Because of the call to `StreamData.resize/2`, this function prevents
   narrowing in favor of more randomly representative data.
 
   ### Examples
 
-      iex> animoji = Myrmidex.many("🐜")
+      iex> alias Myrmidex.Support.DocsGeneratorSchema
+      iex> animoji = Myrmidex.many("🐜", 2..5, generator_schema: DocsGeneratorSchema)
       iex> ascii_codes = Enum.flat_map(animoji, & String.to_charlist(&1))
       iex> Enum.all?(ascii_codes, & &1 in 128000..128048)
       true
@@ -202,16 +227,10 @@ defmodule Myrmidex do
   end
 
   def many(%mod{} = term, count, opts) when is_integer(count) do
-    if opts[:keys] === :string do
-      term
-      |> to_stream(opts)
-      |> many(count)
-    else
-      term
-      |> to_stream(opts)
-      |> via(&struct!(mod, &1))
-      |> many(count)
-    end
+    term
+    |> to_stream(opts)
+    |> via(&struct!(mod, &1))
+    |> many(count)
   end
 
   def many(term, count, opts) when is_integer(count) do
@@ -220,10 +239,8 @@ defmodule Myrmidex do
     |> many(count)
   end
 
-  defguardp is_mappable(term) when is_map(term) or is_list(term)
-
   @doc """
-  Wrap any term except %StreamData{} in `&StreamData.constant/1`.
+  Wrap any term except `%StreamData{}` in `StreamData.constant/1`.
 
   ### Examples
 
@@ -232,14 +249,14 @@ defmodule Myrmidex do
       ["🐜", "🐜", "🐜"]
       iex> match?(^stream, Myrmidex.fix(stream))
       true
-    
+
   """
   def fix(%SD{} = stream_data), do: stream_data
   def fix(term), do: SD.constant(term)
 
   @doc """
   Given `term` and a compatible `term` of overrides, map values via
-  `&StreamData.constant/1` to override any derivation of values via
+  `StreamData.constant/1` to override any derivation of values via
   reflection or pattern matching.
 
   Will not override previously defined generators.
@@ -255,6 +272,7 @@ defmodule Myrmidex do
   """
   def affix(%{} = term, overrides) when is_mappable(overrides) do
     overrides
+    |> maybe_normalize_keys(key_type(term))
     |> Map.new(fn
       {_field, %SD{}} = field_tuple ->
         field_tuple
@@ -265,9 +283,37 @@ defmodule Myrmidex do
     |> then(&Map.merge(term, &1))
   end
 
+  defp maybe_normalize_keys(overrides, :mixed), do: overrides
+
+  defp maybe_normalize_keys(overrides, key_type) do
+    Stream.map(overrides, fn
+      {field, value} when is_atom(field) and key_type === :atom ->
+        {field, value}
+
+      {field, value} when is_binary(field) and key_type === :string ->
+        {field, value}
+
+      {field, value} when is_binary(field) and key_type === :atom ->
+        {String.to_existing_atom(field), value}
+
+      {field, value} when is_atom(field) and key_type === :string ->
+        {Atom.to_string(field), value}
+    end)
+  end
+
+  defp key_type(term) do
+    keys = Map.keys(term)
+
+    cond do
+      Enum.all?(keys, &is_atom/1) -> :atom
+      Enum.all?(keys, &is_binary/1) -> :string
+      true -> :mixed
+    end
+  end
+
   @doc """
-  Same as `&affix/2` but affixes a list of `term`.
-    
+  Same as `affix/2` but affixes a list of `term`.
+
   """
   def affix_many(%{} = term, count, overrides) when is_mappable(overrides) do
     overrides
@@ -288,17 +334,5 @@ defmodule Myrmidex do
 
   def affix_many(%{} = term, overrides) when is_mappable(overrides) do
     affix_many(term, @default_count, overrides)
-  end
-
-  @doc """
-  Feed the results of one stream into another. I.e. just a shorthand
-  for `&StreamData.repeatedly/1` wrapped by `&StreamData.bind/1`.
-    
-  """
-  def via(%SD{} = stream_data, via_fun) do
-    stream_data
-    |> SD.bind(fn term ->
-      SD.repeatedly(fn -> via_fun.(term) end)
-    end)
   end
 end

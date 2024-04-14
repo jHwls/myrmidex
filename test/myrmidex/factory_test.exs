@@ -15,7 +15,7 @@ defmodule Myrmidex.FactoryTest do
 
     assert %{"price" => _} =
              %EctoSchema{}
-             |> TestFactory.to_stream(keys: :string)
+             |> TestFactory.to_stream(attr_keys: :string)
              |> Myrmidex.one()
   end
 
@@ -38,7 +38,7 @@ defmodule Myrmidex.FactoryTest do
 
   test "raises usefully when no matching &insert/2 impl" do
     assert_raise RuntimeError,
-                 "Myrmidex.FactoryTest.TestStreamOnlyFactory does not define an implementation for &Myrmidex.Factory.insert/2",
+                 "Myrmidex.FactoryTest.TestStreamOnlyFactory does not define an implementation for Myrmidex.Factory.insert/2",
                  fn ->
                    %EctoSchema{}
                    |> TestStreamOnlyFactory.to_stream()

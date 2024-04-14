@@ -6,13 +6,13 @@ defmodule Myrmidex.Factory do
   your domain: i.e. your schemas.
 
   Opts based to this module via `use` are persisted at compile time
-  and will be passed to, e.g. `&Myrmidex.stream/2`, in order to delegate
+  and will be passed to, e.g. `Myrmidex.to_stream/2`, in order to delegate
   to your domain-specific generator schema. This module itself uses
   `Myrmidex.GeneratorSchema`, so you may define all, or factory-specific,
   casts within the factory module, or fallback on any generator schema.
 
-  Runtime opts passed in the second argument to `&to_stream/2` or
-  `&attrs/2` will override these module-specific compile-time opts.
+  Runtime opts passed in the second argument to `to_stream/2` or
+  `attrs/2` will override these module-specific compile-time opts.
 
   Putting this all together, a basic implmentation could look something
   like:
@@ -24,7 +24,7 @@ defmodule Myrmidex.Factory do
     use Myrmidex.Factory
 
     # Your factory api is up to you, but one option is to define streams
-    # that can then be composed together before calling `&persist/3`.
+    # that can then be composed together before calling `persist/3`.
     def my_schema_stream(overrides \\ [], stream_opts \\ []) do
       %MySchema{}
       |> Myrmidex.affix(overrides)
@@ -87,9 +87,9 @@ defmodule Myrmidex.Factory do
             |> Myrmidex.Opts.validate!()
 
       @doc """
-      Runtime access to the validated Myrmidex.Factory opts for this 
+      Runtime access to the validated Myrmidex.Factory opts for this
       factory (#{inspect(__MODULE__)}).
-            
+
       """
       def opts, do: @opts
 
@@ -104,9 +104,7 @@ defmodule Myrmidex.Factory do
       def to_stream(%SD{} = stream, _opts), do: stream
 
       def to_stream(term, opts) do
-        opts
-        |> __merge_opts__()
-        |> then(&Myrmidex.to_stream(term, &1))
+        Myrmidex.to_stream(term, __merge_opts__(opts))
       end
 
       @doc "Build a stream and take one or many attrs"
@@ -116,7 +114,7 @@ defmodule Myrmidex.Factory do
         |> Myrmidex.many(count)
       end
 
-      @doc "Pass a stream to your datasource via the `&insert/1` callback"
+      @doc "Pass a stream to your datasource via the `insert/1` callback"
       def persist(%SD{} = stream, struct_mod, count \\ 1) do
         stream
         |> Myrmidex.many(count)
@@ -132,7 +130,7 @@ defmodule Myrmidex.Factory do
     e in [UndefinedFunctionError] ->
       if e.module === factory_mod do
         reraise RuntimeError,
-                "#{inspect(factory_mod)} does not define an implementation for &Myrmidex.Factory.insert/2",
+                "#{inspect(factory_mod)} does not define an implementation for Myrmidex.Factory.insert/2",
                 __STACKTRACE__
       else
         reraise e, __STACKTRACE__

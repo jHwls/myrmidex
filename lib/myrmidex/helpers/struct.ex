@@ -11,13 +11,4 @@ defmodule Myrmidex.Helpers.Struct do
       false
     end
   end
-
-  @doc false
-  def build_fields_enum(mod) do
-    struct = mod.__struct__()
-
-    struct
-    |> Map.from_struct()
-    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-  end
 end

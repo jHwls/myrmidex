@@ -5,7 +5,7 @@ defmodule Myrmidex.Helpers.StreamDataTest do
   alias Myrmidex.Helpers.StreamData, as: SDHelpers
   import ExUnitProperties
 
-  describe "&SDHelpers.monotonic_integer_stream_data/0" do
+  describe "SDHelpers.monotonic_integer_stream_data/0" do
     test "returns valid, increasing integer ids" do
       stream = SDHelpers.monotonic_integer_stream_data()
 
@@ -18,7 +18,7 @@ defmodule Myrmidex.Helpers.StreamDataTest do
     end
   end
 
-  describe "&SDHelpers.uuid_stream_data/0" do
+  describe "SDHelpers.uuid_stream_data/0" do
     property "returns valid integer ids" do
       check all id <- SDHelpers.uuid_stream_data() do
         assert is_binary(id)
@@ -26,7 +26,7 @@ defmodule Myrmidex.Helpers.StreamDataTest do
     end
   end
 
-  describe "&SDHelpers.time_stream_data/0" do
+  describe "SDHelpers.time_stream_data/0" do
     property "returns valid times" do
       check all time <- SDHelpers.time_stream_data() do
         assert %Time{} = time
@@ -49,7 +49,7 @@ defmodule Myrmidex.Helpers.StreamDataTest do
     end
   end
 
-  describe "&SDHelpers.date_stream_data/0" do
+  describe "SDHelpers.date_stream_data/0" do
     property "returns valid date" do
       check all date <- SDHelpers.date_stream_data() do
         assert %Date{} = date
@@ -57,7 +57,7 @@ defmodule Myrmidex.Helpers.StreamDataTest do
     end
   end
 
-  describe "&SDHelpers.datetime_stream_data/0" do
+  describe "SDHelpers.datetime_stream_data/0" do
     property "returns valid utc_datetime_usec data" do
       check all datetime <- SDHelpers.datetime_stream_data() do
         assert %DateTime{
@@ -73,7 +73,7 @@ defmodule Myrmidex.Helpers.StreamDataTest do
     end
   end
 
-  describe "&SDHelpers.string_stream_data/0" do
+  describe "SDHelpers.string_stream_data/0" do
     property "returns valid string" do
       check all string <- SD.string(:alphanumeric),
                 string <- SDHelpers.string_stream_data(string) do

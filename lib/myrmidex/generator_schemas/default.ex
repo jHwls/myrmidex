@@ -2,86 +2,110 @@ defmodule Myrmidex.GeneratorSchemas.Default do
   @moduledoc """
   The default/fallback implementation of a `Myrmidex.GeneratorSchema`.
 
+  Defines sensible generators for basic Elixir terms and common structs. Also
+  provides basic handling of Ecto fields for generating schemas.
+
   """
   use Myrmidex.GeneratorSchema
   alias Myrmidex.Helpers.StreamData, as: SDHelpers
 
   defguardp is_binary_id_field(type) when type in [:binary_id, Ecto.UUID]
   defguardp is_datetime_field(type) when type in [:utc_datetime_usec, :utc_datetime]
+  defguardp is_ecto_assoc(assoc) when assoc in [:has_one, :belongs_to, :has_many, :foreign_key]
 
   @impl Myrmidex.GeneratorSchema
-  def cast_field({_field, {:autogenerate, :id}}, _opts),
-    do: SDHelpers.monotonic_integer_stream_data()
+  def cast_field({_field, {:autogenerate, :id}, _term}, _opts) do
+    id_generator()
+  end
 
-  def cast_field({_field, {:autogenerate, type}}, _opts) when is_binary_id_field(type),
-    do: SDHelpers.uuid_stream_data()
+  def cast_field({_field, {:autogenerate, type}, _term}, _opts) when is_binary_id_field(type) do
+    binary_id_generator()
+  end
 
-  def cast_field({_field, {:autogenerate, type}}, _opts) when is_datetime_field(type),
-    do: SDHelpers.timestamp_stream_data(type)
+  def cast_field({_field, {:autogenerate, type}, _term}, _opts) when is_datetime_field(type) do
+    timestamp_generator(type)
+  end
 
-  def cast_field({_field, {:parameterized, Ecto.Embedded, %Ecto.Embedded{}}}, _opts),
-    do: SD.constant(nil)
+  def cast_field({_field, {:parameterized, Ecto.Embedded, %Ecto.Embedded{}}, _term}, _opts) do
+    nil_generator()
+  end
 
-  def cast_field({_field, {:parameterized, Ecto.Enum, %{mappings: mappings}}}, _opts) do
+  def cast_field({_field, {:parameterized, Ecto.Enum, %{mappings: mappings}}, _term}, _opts) do
     mappings
     |> Keyword.keys()
-    |> SDHelpers.enum_stream_data()
+    |> enum_generator()
   end
 
-  def cast_field({_field, {assoc, _type}}, _opts)
-      when assoc in [:has_one, :belongs_to, :has_many, :foreign_key],
-      do: SD.constant(nil)
+  def cast_field({_field, {assoc, _type}, _term}, _opts) when is_ecto_assoc(assoc) do
+    nil_generator()
+  end
 
-  def cast_field({_field, type}, _opts) when is_datetime_field(type),
-    do: SDHelpers.datetime_stream_data(type)
+  def cast_field({_field, type, _term}, _opts) when is_datetime_field(type) do
+    datetime_generator(type)
+  end
 
-  def cast_field({_field, :date}, _opts),
-    do: SDHelpers.date_stream_data()
-
-  def cast_field({_field, :time}, _opts),
-    do: SDHelpers.time_stream_data()
-
-  def cast_field({_field, :integer}, _opts), do: SD.integer()
-  def cast_field({_field, :float}, _opts), do: SD.float()
-  def cast_field({_field, :string}, _opts), do: SD.string(:alphanumeric)
-  def cast_field({_field, :boolean}, _opts), do: SD.boolean()
+  def cast_field({_field, :date, _term}, _opts), do: date_generator()
+  def cast_field({_field, :time, _term}, _opts), do: time_generator()
+  def cast_field({_field, :integer, _term}, _opts), do: integer_generator()
+  def cast_field({_field, :float, _term}, _opts), do: float_generator()
+  def cast_field({_field, :boolean, _term}, _opts), do: boolean_generator()
+  def cast_field({_field, :string, _term}, _opts), do: string_generator()
+  def cast_field({_field, term}, opts), do: cast(term, opts)
 
   @impl Myrmidex.GeneratorSchema
-  def cast(term, _opts) when is_map(term) and term === %{} do
-    SD.map_of(SD.atom(:alphanumeric), SD.term())
+  def cast(nil, _opts), do: nil_generator()
+  def cast(%Date{} = _term, _opts), do: date_generator()
+  def cast(%Time{} = _term, _opts), do: time_generator()
+  def cast(%DateTime{} = _term, _opts), do: datetime_generator()
+  def cast(%{} = _term, _opts), do: empty_map_generator()
+  def cast(term, _opts) when term === [], do: empty_list_generator()
+  def cast(term, opts) when is_list(term), do: list_generator(term, opts)
+  def cast(term, _opts) when is_binary(term), do: string_generator(term)
+  def cast(term, _opts) when is_boolean(term), do: boolean_generator()
+  def cast(term, _opts) when is_integer(term), do: integer_generator()
+  def cast(term, _opts) when is_float(term), do: float_generator()
+  def cast(term, _opts) when is_atom(term), do: atom_generator()
+  def cast(term, _opts) when is_reference(term), do: ref_generator()
+  def cast(term, opts) when is_tuple(term), do: tuple_generator(term, opts)
+
+  defdelegate binary_id_generator(), to: SDHelpers, as: :uuid_stream_data
+  defdelegate datetime_generator(type \\ :utc_datetime), to: SDHelpers, as: :datetime_stream_data
+  defdelegate date_generator, to: SDHelpers, as: :date_stream_data
+  defdelegate enum_generator(values), to: SDHelpers, as: :enum_stream_data
+  defdelegate id_generator, to: SDHelpers, as: :monotonic_integer_stream_data
+  defdelegate string_generator(term), to: SDHelpers, as: :string_stream_data
+  defdelegate time_generator, to: SDHelpers, as: :time_stream_data
+  defdelegate timestamp_generator(type), to: SDHelpers, as: :timestamp_stream_data
+
+  def atom_generator, do: SD.atom(:alphanumeric)
+  def boolean_generator, do: SD.boolean()
+  def empty_list_generator, do: SD.constant([])
+  def empty_map_generator, do: SD.constant(%{})
+  def float_generator, do: SD.float()
+  def integer_generator, do: SD.integer()
+  def nil_generator, do: SD.constant(nil)
+  def ref_generator, do: SD.repeatedly(&make_ref/0)
+  def string_generator, do: SD.string(:alphanumeric)
+
+  @doc """
+  For non-empty lists, generates a list of terms representative of the original
+  list items.
+
+  """
+  def list_generator(list, opts) do
+    list
+    |> Stream.map(&cast(&1, opts))
+    |> Enum.uniq()
+    |> SD.one_of()
+    |> then(&SD.list_of(&1))
   end
 
-  def cast(term, opts) when is_map(term) do
-    {k, v} = Enum.at(term, 0)
-    SD.map_of(cast(k, opts), cast(v, opts))
-  end
-
-  def cast(term, _opts) when is_list(term),
-    do: SD.list_of(SD.term())
-
-  def cast(term, opts) when is_tuple(term) do
-    term
+  @doc "Generates tuples of the same size and terms as the passed tuple."
+  def tuple_generator(tuple, opts) do
+    tuple
     |> Tuple.to_list()
     |> Enum.map(&cast(&1, opts))
     |> List.to_tuple()
-    |> SD.tuple()
+    |> then(&SD.tuple(&1))
   end
-
-  def cast(term, _opts) when is_binary(term),
-    do: SDHelpers.string_stream_data(term)
-
-  def cast(term, _opts) when is_boolean(term),
-    do: SD.boolean()
-
-  def cast(term, _opts) when is_integer(term),
-    do: SD.integer()
-
-  def cast(term, _opts) when is_float(term),
-    do: SD.float()
-
-  def cast(term, _opts) when is_atom(term),
-    do: SD.atom(:alphanumeric)
-
-  def cast(term, _opts) when is_reference(term),
-    do: SD.constant(make_ref())
 end

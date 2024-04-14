@@ -1,7 +1,7 @@
 defmodule Myrmidex.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @repo_url "https://github.com/jhwls/myrmidex"
 
   def project do
@@ -73,16 +73,13 @@ defmodule Myrmidex.MixProject do
       extras: ["README.md": [title: "README"], "LICENSE.md": []],
       groups_for_modules: [
         "Generator Schemas": [
-          Myrmidex.GeneratorSchema,
           Myrmidex.GeneratorSchemas.Default
         ],
-        Factories: [
-          Myrmidex.Factory
-        ],
-        Helpers: [
+        Generators: [
           Myrmidex.Helpers.StreamData
         ]
-      ]
+      ],
+      nest_modules_by_prefix: [Myrmidex.GeneratorSchemas, Myrmidex.Helpers]
     ]
   end
 end

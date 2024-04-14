@@ -3,6 +3,8 @@
 ![Tests](https://github.com/jhwls/myrmidex/actions/workflows/test.yml/badge.svg)
 ![Coverage](https://github.com/jhwls/myrmidex/actions/workflows/coverage.yml/badge.svg)
 ![Credo](https://github.com/jhwls/myrmidex/actions/workflows/credo.yml/badge.svg)
+[![Hex.pm](https://img.shields.io/hexpm/v/myrmidex.svg)](https://hex.pm/packages/myrmidex)
+[![Documentation](https://img.shields.io/badge/docs-grey)](https://hexdocs.pm/myrmidex)
 
 A light wrapper around `StreamData`. Generate any data on the fly, or model
 the underlying types and common fields of domain-specific structs or schemas,
@@ -12,7 +14,7 @@ maximizing reusability of factory data throughout testing and development.
 ## Installation
 
 Add to your list of test dependencies in `mix.exs`, optionally also including
-in dev if you want to be able to use:
+in `dev` if you want to be able to use in IEx:
 
 ```elixir
 def deps do
@@ -51,7 +53,7 @@ iex> %{species: "🐜"}
 
 ```
 
-See the [main module](`Myrmidex`) (`h Myrmidex`) for examples of mocking
+See the [main module](https://hexdocs.pm/myrmidex/Myrmidex.html) (`h Myrmidex`) for examples of mocking
 structs and schemas, defining custom generator schemas, or hooking
 generation to persistance via factories.
 

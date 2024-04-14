@@ -29,6 +29,17 @@ defmodule Myrmidex.MixProject do
         coveralls: :test,
         "coveralls.html": :test,
         "coveralls.json": :test
+      ],
+      # Dialyzer
+      dialyzer: [
+        plt_add_deps: :app_tree,
+        plt_local_path: ".dialyzer/local_plt",
+        plt_core_path: ".dialyzer/core_plt",
+        ignore_warnings: ".dialyzer/dialyzer-ignore.exs",
+        list_unused_filters: true,
+        flags: [
+          :no_opaque
+        ]
       ]
     ]
   end

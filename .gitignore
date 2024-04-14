@@ -27,3 +27,6 @@ myrmidex-*.tar
 
 # Ignore lsp files
 .lexical/
+
+# Ignore dialyzer files
+.dialyzer/

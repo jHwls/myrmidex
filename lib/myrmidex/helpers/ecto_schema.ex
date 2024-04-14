@@ -2,6 +2,8 @@ defmodule Myrmidex.Helpers.EctoSchema do
   @moduledoc false
 
   @doc false
+  def implementer?(%mod{}), do: implementer?(mod)
+
   def implementer?(mod) do
     :functions
     |> mod.__info__()
@@ -9,14 +11,15 @@ defmodule Myrmidex.Helpers.EctoSchema do
   end
 
   @doc false
-  def build_field_types(mod, opts) do
+  def build_field_type_term_tuples(%mod{} = schema, opts) do
     mod
-    |> to_normalized_field_types()
+    |> introspect_field_type_tuples()
+    |> zip_with_terms(schema)
     |> maybe_drop_schema_fields(opts)
   end
 
   @doc false
-  def to_normalized_field_types(mod) do
+  def introspect_field_type_tuples(mod) do
     autogen_fields =
       mod
       |> all_autogenerate_fields()
@@ -89,25 +92,28 @@ defmodule Myrmidex.Helpers.EctoSchema do
   end
 
   @doc false
-  def maybe_drop_schema_fields(fields, opts) do
-    Enum.reject(fields, fn
-      {_field, {:autogenerate, _type}} ->
-        Keyword.get(opts, :drop_autogenerate?)
-
-      {_field, {assoc, _type}}
-      when assoc in [:foreign_key, :belongs_to, :has_one, :has_many] ->
-        Keyword.get(opts, :drop_associations?)
-
-      _field_type ->
-        false
+  def zip_with_terms(field_type_tuples, schema) do
+    Enum.map(field_type_tuples, fn {field, type} = _field_type_tuple ->
+      {field, type, Map.get(schema, field)}
     end)
   end
 
   @doc false
-  def all_field_types(mod) do
-    mod
-    |> fields()
-    |> Enum.map(&{&1, field_type(mod, &1)})
+  def maybe_drop_schema_fields(fields, opts) do
+    Enum.reject(fields, fn
+      {_field, _type, %StreamData{}} ->
+        false
+
+      {_field, {:autogenerate, _type}, _term} ->
+        Keyword.get(opts, :drop_autogenerate?)
+
+      {_field, {assoc, _type}, _term}
+      when assoc in [:foreign_key, :belongs_to, :has_one, :has_many] ->
+        Keyword.get(opts, :drop_associations?)
+
+      _field_type_tuple ->
+        false
+    end)
   end
 
   defp field_names(field_type_tuples) do

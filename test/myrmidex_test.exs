@@ -4,10 +4,10 @@ defmodule MyrmidexTest do
 
   alias Myrmidex.Support.Fixtures.{EctoSchema, TestPumpkin}
 
-  describe "&Myrmidex.to_stream/1 with an Ecto schema" do
+  describe "Myrmidex.to_stream/1 with an Ecto schema" do
     @opts []
     test "provides sensible defaults via reflection" do
-      assert %StreamData{} = stream_data = Myrmidex.to_stream(%EctoSchema{}, @opts)
+      assert %SD{} = stream_data = Myrmidex.to_stream(%EctoSchema{}, @opts)
 
       assert %{
                id: id,
@@ -31,7 +31,7 @@ defmodule MyrmidexTest do
 
     @opts []
     test "accepts a schema module" do
-      assert %StreamData{} = Myrmidex.to_stream(EctoSchema, @opts)
+      assert %SD{} = Myrmidex.to_stream(EctoSchema, @opts)
     end
 
     @opts []
@@ -53,7 +53,7 @@ defmodule MyrmidexTest do
       assert %{open_int: 42} = pick(stream_data)
     end
 
-    @opts [keys: :string]
+    @opts [attr_keys: :string]
     test "maps to string keys via opts" do
       assert %StreamData{} = stream_data = Myrmidex.to_stream(%EctoSchema{}, @opts)
 
@@ -85,21 +85,78 @@ defmodule MyrmidexTest do
       assert %{} = attrs = pick(stream_data)
       refute Map.has_key?(attrs, :contract)
     end
+
+    @opts [drop_associations?: true, drop_autogenerate?: true]
+    test "field-level overrides overrule opts" do
+      assert %StreamData{} =
+               stream_data =
+               %EctoSchema{}
+               |> Myrmidex.affix(%{id: 1, symbol_id: "D"})
+               |> Myrmidex.to_stream(@opts)
+
+      assert %{id: 1, symbol_id: "D"} = pick(stream_data)
+    end
   end
 
-  describe "&Myrmidex.one/2 & &Myrmidex.many/3" do
-    property "return one from any stream" do
+  describe "Myrmidex.to_stream/1 with a map" do
+    @term %{string: "String", number: 1.23, map: %{one: 1, two: 2}, empty_map: %{}}
+    @opts []
+    test "provides sensible defaults via matching" do
+      assert %StreamData{} = stream_data = Myrmidex.to_stream(@term, @opts)
+
+      assert %{
+               string: string,
+               number: number,
+               map: %{one: _, two: _},
+               empty_map: %{}
+             } = pick(stream_data)
+
+      assert is_binary(string)
+      assert is_float(number)
+    end
+
+    @opts [attr_keys: :string]
+    test "maps to string keys via opts" do
+      assert %StreamData{} = stream_data = Myrmidex.to_stream(@term, @opts)
+
+      assert %{
+               "string" => string,
+               "number" => number
+             } = pick(stream_data)
+
+      assert is_binary(string)
+      assert is_float(number)
+    end
+
+    @term %{"key" => "value"}
+    @opts []
+    test "matches key type of the term by default" do
+      assert %StreamData{} = stream_data = Myrmidex.to_stream(@term, @opts)
+      assert %{"key" => _} = pick(stream_data)
+    end
+  end
+
+  describe "Myrmidex.one/2 & Myrmidex.many/3" do
+    @opts []
+
+    property "return one from any term" do
       check all term <- SD.term() do
         generated_term = Myrmidex.one(SD.repeatedly(fn -> term end))
         assert match?(^term, generated_term)
       end
     end
 
-    property "return many from a stream" do
+    property "return many from any term" do
       check all term <- SD.term() do
         assert [generated_term | _] = Myrmidex.many(SD.repeatedly(fn -> term end))
         assert match?(^term, generated_term)
       end
+    end
+
+    test "returns a representative from a vanilla stream" do
+      stream = Stream.map([1, 2, 3], & &1)
+      1 = Myrmidex.one(stream, @opts)
+      [1, 2] = Myrmidex.many(stream, 2, @opts)
     end
 
     test "returns one or many Ecto schemas" do
@@ -113,25 +170,69 @@ defmodule MyrmidexTest do
     end
   end
 
-  describe "&Myrmidex.affix/2" do
-    @values %{value: 2, other_value: nil}
-
+  describe "Myrmidex.affix/2" do
+    @term %{value: 2, other_value: nil}
     test "maps given overrides into constant streams" do
-      assert %{value: %SD{}, other_value: nil} = Myrmidex.affix(@values, %{value: 4})
-      assert %{value: %SD{}, other_value: nil} = Myrmidex.affix(@values, value: nil)
+      assert %{value: %SD{} = generator, other_value: nil} = Myrmidex.affix(@term, %{value: 4})
+      assert constant_generator?(generator, 4)
+      assert %{value: %SD{} = generator, other_value: nil} = Myrmidex.affix(@term, value: nil)
+      assert constant_generator?(generator, nil)
     end
 
-    test "" do
-      assert %{value: %SD{}, other_value: nil} = Myrmidex.affix(@values, %{value: 4})
-      assert %{value: %SD{}, other_value: nil} = Myrmidex.affix(@values, value: nil)
+    test "respects atom-keyed maps when applying overrides" do
+      assert %{value: %SD{}, other_value: nil} =
+               Myrmidex.affix(@term, %{value: 4})
+
+      assert %{value: %SD{}, other_value: nil} =
+               Myrmidex.affix(@term, %{"value" => 4})
+    end
+
+    @term %{"value" => 2, "other_value" => nil}
+    test "respects string-keyed maps when applying overrides" do
+      assert %{"value" => %SD{}, "other_value" => nil} =
+               Myrmidex.affix(@term, value: 4)
+
+      assert %{"value" => %SD{}, "other_value" => nil} =
+               Myrmidex.affix(@term, %{"value" => 4})
+    end
+
+    @term %{"value" => 2, other_value: nil}
+    test "is agnostic to mixed-keyed maps when applying overrides" do
+      assert %{value: %SD{}, other_value: nil} =
+               Myrmidex.affix(@term, value: 4)
+
+      assert %{"value" => %SD{}, other_value: nil} =
+               Myrmidex.affix(@term, %{"value" => 4})
     end
   end
 
-  describe "&Myrmidex.affix_many/2 and &Myrmidex.affix_many/3" do
-    @values %{value: 2, other_value: nil}
+  describe "Myrmidex.affix/2 & Myrmidex.to_stream/2" do
+    @term %{string: "String", number: 1.23, map: %{one: 1, two: 2}, empty_map: %{}}
+    @opts [attr_keys: :string]
+    test "affixes any given overrides" do
+      assert %SD{} =
+               stream_data =
+               @term
+               |> Myrmidex.affix(number: 4)
+               |> Myrmidex.to_stream(@opts)
+
+      assert %{"number" => 4} = pick(stream_data)
+
+      assert %SD{} =
+               stream_data =
+               @term
+               |> Myrmidex.affix(%{"number" => 4})
+               |> Myrmidex.to_stream(@opts)
+
+      assert %{"number" => 4} = pick(stream_data)
+    end
+  end
+
+  describe "Myrmidex.affix_many/2 and Myrmidex.affix_many/3" do
+    @term %{value: 2, other_value: nil}
 
     test "maps given overrides into list_of streams" do
-      assert %{value: %SD{}, other_value: nil} = Myrmidex.affix_many(@values, %{value: 4})
+      assert %{value: %SD{}, other_value: nil} = Myrmidex.affix_many(@term, %{value: 4})
     end
 
     property "nests a list of term into an object" do
@@ -159,6 +260,18 @@ defmodule MyrmidexTest do
                |> Myrmidex.one()
 
       assert length(trades) < 5
+    end
+  end
+
+  describe "Myrmidex.via/2" do
+    test "repeatedly applies a 1-arity function to the result of a stream" do
+      assert %SD{} =
+               stream_data =
+               1
+               |> Myrmidex.to_stream(limit_generation?: true)
+               |> Myrmidex.via(&(&1 * 2))
+
+      assert Enum.all?(Myrmidex.many(stream_data), &(&1 === 2))
     end
   end
 end

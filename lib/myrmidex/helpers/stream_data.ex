@@ -3,7 +3,7 @@ defmodule Myrmidex.Helpers.StreamData do
   General use generators for use in generator schema modules.
 
   By default, these generators are configured to allow for narrowing, i.e.
-  use in property-based testing. You can, for example, wrap functions in 
+  use in property-based testing. You can, for example, wrap functions in
   `StreamData.unshrinkable/1`, or define your own more suited to your domain,
   in a custom generator schema.
 
@@ -16,15 +16,15 @@ defmodule Myrmidex.Helpers.StreamData do
   the same sequence of ids.
 
   More sophisticated id generators can be implemented via generator schemas.
-    
+
   """
   def monotonic_integer_stream_data do
     SD.repeatedly(fn -> System.unique_integer([:positive, :monotonic]) end)
   end
 
   @doc """
-  Per [StreamData docs](`StreamData.repeatedly/1`). 
-    
+  Per [StreamData docs](`StreamData.repeatedly/1`).
+
   """
   def uuid_stream_data do
     SD.repeatedly(&Ecto.UUID.autogenerate/0)
@@ -35,7 +35,7 @@ defmodule Myrmidex.Helpers.StreamData do
 
   ### Examples
 
-      iex> stream = Myrmidex.Helpers.StreamData.timestamp_stream_data()         
+      iex> stream = Myrmidex.Helpers.StreamData.timestamp_stream_data()
       iex> match?(%DateTime{}, Myrmidex.one(stream))
       true
 
@@ -57,10 +57,9 @@ defmodule Myrmidex.Helpers.StreamData do
   defp now, do: DateTime.utc_now()
 
   @doc """
-  Choose one from a (predetermined, limited) list of values. Note that this 
-  generator is passed via [unshrinkable](`StreamData.unshrinkable/1`) to
-  ensure random output.
-    
+  Choose one from a (predetermined, limited) list of values. Note that this
+  generator is passed via `StreamData.unshrinkable/1` to ensure random output.
+
   ### Examples
 
       iex> values = ["🐜", "🪰", "🪳"]
@@ -75,7 +74,9 @@ defmodule Myrmidex.Helpers.StreamData do
     |> SD.unshrinkable()
   end
 
-  @doc false
+  @doc """
+
+  """
   def datetime_stream_data(type \\ :utc_datetime_usec)
 
   def datetime_stream_data(:utc_datetime_usec) do
@@ -131,7 +132,7 @@ defmodule Myrmidex.Helpers.StreamData do
 
   @doc """
   Generate a random time.
-    
+
   """
   def time_stream_data(opts \\ []) do
     opts =
@@ -167,7 +168,7 @@ defmodule Myrmidex.Helpers.StreamData do
       iex> stream = Myrmidex.Helpers.StreamData.integer_stream_data()
       iex> is_integer(Myrmidex.one(stream))
       true
-     
+
   """
   def integer_stream_data, do: SD.integer()
   def integer_stream_data(int) when is_integer(int), do: SD.constant(int)
@@ -200,12 +201,6 @@ defmodule Myrmidex.Helpers.StreamData do
       !String.printable?(string) ->
         SD.bitstring()
 
-      String.length(string) === 1 ->
-        string
-        |> String.to_charlist()
-        |> List.first()
-        |> string_stream_data()
-
       Regex.match?(~r/^[[:alpha:]]*$/, string) ->
         SD.string([?a..?z, ?A..?Z])
 
@@ -217,19 +212,40 @@ defmodule Myrmidex.Helpers.StreamData do
     end
   end
 
-  def string_stream_data(char) when is_integer(char) do
-    char
-    |> ascii_range()
-    |> SD.string(length: 1)
+  @doc """
+  """
+  def fixed_map_stream_data(field_generators, keys \\ :atom) do
+    field_generators
+    |> maybe_transform_keys(keys)
+    |> SD.fixed_map()
   end
 
-  @animoji_ascii_range 128_000..128_048
-  @food_ascii_range 127_812..127_884
-  defp ascii_range(char) do
-    cond do
-      char in @animoji_ascii_range -> @animoji_ascii_range
-      char in @food_ascii_range -> @food_ascii_range
-      true -> :ascii
-    end
+  defp maybe_transform_keys(term, type)
+       when is_map(term)
+       when is_list(term)
+       when is_struct(term, Stream) do
+    Map.new(term, fn {k, v} ->
+      case {type, k} do
+        {:string, k} when is_atom(k) ->
+          {Atom.to_string(k), v}
+
+        {:atom, k} when is_binary(k) ->
+          {String.to_existing_atom(k), v}
+
+        _ ->
+          {k, v}
+      end
+    end)
+  end
+
+  @doc """
+  Lazily transform the results of a stream via a function. I.e. just a
+  shorthand for `StreamData.repeatedly/1` wrapped by `StreamData.bind/2`.
+
+  """
+  def via(%SD{} = stream_data, via_fun) when is_function(via_fun, 1) do
+    SD.bind(stream_data, fn term ->
+      SD.repeatedly(fn -> via_fun.(term) end)
+    end)
   end
 end

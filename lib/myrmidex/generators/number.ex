@@ -14,4 +14,19 @@ defmodule Myrmidex.Generators.Number do
     SD.repeatedly(fn -> System.unique_integer([:positive, :monotonic]) end)
   end
 
+  @doc false
+  def counter_stream_data(start, step) do
+    counter_ref = :counters.new(1, [])
+    :counters.add(counter_ref, 1, start)
+
+    {
+      integer_stream_data(step)
+    }
+    |> SD.bind(fn {increase} ->
+      SD.repeatedly(fn ->
+        :counters.add(counter_ref, 1, increase)
+        :counters.get(counter_ref, 1)
+      end)
+    end)
+  end
 end

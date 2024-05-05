@@ -6,7 +6,7 @@ defmodule Myrmidex.GeneratorSchema do
   of map or struct fields, into StreamData generators. See `Myrmidex.GeneratorSchemas.Default`.
 
   """
-  alias Myrmidex.{Field, Helpers}
+  alias Myrmidex.{Field, Generators, Helpers}
   alias StreamData, as: SD
   import Field, only: [is_field: 1]
 
@@ -88,7 +88,7 @@ defmodule Myrmidex.GeneratorSchema do
   defp build_fixed_map_generator(generator_schema, term, opts) do
     term
     |> to_field_generator_tuple_stream(generator_schema, opts)
-    |> Helpers.StreamData.fixed_map_stream_data(opts[:attr_keys])
+    |> Generators.fixed_map(opts[:attr_keys])
   end
 
   defp cast_and_build_generator(generator_schema, term, opts) do
@@ -140,6 +140,7 @@ defmodule Myrmidex.GeneratorSchema do
     end
   end
 
+  @doc false
   defguard is_mappable(term) when is_map(term) or is_list(term)
 
   @doc false

@@ -74,9 +74,6 @@ defmodule Myrmidex.MixProject do
       groups_for_modules: [
         "Generator Schemas": [
           Myrmidex.GeneratorSchemas.Default
-        ],
-        Generators: [
-          Myrmidex.Helpers.StreamData
         ]
       ],
       nest_modules_by_prefix: [Myrmidex.GeneratorSchemas, Myrmidex.Helpers]

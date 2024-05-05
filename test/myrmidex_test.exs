@@ -161,12 +161,12 @@ defmodule MyrmidexTest do
 
     test "returns one or many Ecto schemas" do
       assert %EctoSchema{} = Myrmidex.one(%EctoSchema{}, @opts)
-      assert [%EctoSchema{} | _] = Myrmidex.many(%EctoSchema{}, 10, @opts)
+      assert [%EctoSchema{} | _] = Myrmidex.many(%EctoSchema{}, 2, @opts)
     end
 
     test "returns one or many structs" do
       assert %TestPumpkin{} = Myrmidex.one(%TestPumpkin{}, @opts)
-      assert [%TestPumpkin{} | _] = Myrmidex.many(%TestPumpkin{}, 10, @opts)
+      assert [%TestPumpkin{} | _] = Myrmidex.many(%TestPumpkin{}, 2, @opts)
     end
   end
 

@@ -68,6 +68,34 @@ defmodule Myrmidex.Generators do
 
   """
   defdelegate monotonic_integer, to: Generators.Number, as: :monotonic_integer_stream_data
+
+  @doc """
+  Globally unique streamable counters.
+
+  Useful for ids or other cases where more control over streaming monotonic
+  data is needed, e.g., a mock unix timestamp that can be advanced or reversed
+  as needed.
+
+  ### Examples
+
+      iex> stream = Myrmidex.Generators.counter(0, 2)
+      ...> Myrmidex.many(stream, 4)
+      [2, 4, 6, 8]
+
+      iex> stream_1 = Myrmidex.Generators.counter()
+      ...> stream_2 = Myrmidex.Generators.counter()
+      ...> {Myrmidex.one(stream_1), Myrmidex.one(stream_2)}
+      {1, 1}
+
+      iex> start = DateTime.new!(~D[1984-01-01], ~T[00:00:00])
+      ...> start_unix = DateTime.to_unix(start)
+      ...> stream = Myrmidex.Generators.counter(start_unix, -60)
+      ...> Myrmidex.many(stream, 4)
+      [441763140, 441763080, 441763020, 441762960]
+
+  """
+  defdelegate counter(start \\ 0, step \\ 1), to: Generators.Number, as: :counter_stream_data
+
   @doc """
   Defaults to current time in utc.
 
@@ -148,6 +176,67 @@ defmodule Myrmidex.Generators do
   """
   defdelegate time(opts \\ []), to: Generators.Calendar, as: :time_stream_data
 
+  @doc """
+  Generate data approximate to a given term. Accepts integers, floats, dates,
+  times, and datetimes.
+
+  Generated data is random within the given scale and limits, i.e. not
+  characterized by any trend.
+
+  ### Examples
+
+      iex> stream = Myrmidex.Generators.approximate(10, scale: 100)
+      ...> int = Myrmidex.one(stream)
+      ...> int >= -90 and int <= 110
+      true
+
+      iex> stream = Myrmidex.Generators.approximate(Date.utc_today(), limits: [:upper])
+      ...> date = Myrmidex.one(stream)
+      ...> Date.compare(date, Date.utc_today()) in [:gt, :eq]
+      true
+
+  ### Options
+
+  #{NimbleOptions.docs(Generators.Approximate.schema())}
+
+  """
+  defdelegate approximate(term, opts \\ []),
+    to: Generators.Approximate,
+    as: :approximate_stream_data
+
+  @doc """
+  Generate data that is quantitavely or chronologically less than or equal to
+  the given term.
+
+  See `approximate/2` for details.
+
+  ### Examples
+
+      iex> stream = Myrmidex.Generators.lte(10)
+      ...> Myrmidex.one(stream) <= 10
+      true
+
+  """
+  def lte(term, opts \\ []) do
+    approximate(term, Keyword.put(opts, :limits, [:lower]))
+  end
+
+  @doc """
+  Generate data that is quantitavely or chronologically greater than or equal to
+  the given term.
+
+  See `approximate/2` for details.
+
+  ### Examples
+
+      iex> stream = Myrmidex.Generators.gte(10)
+      ...> Myrmidex.one(stream) >= 10
+      true
+
+  """
+  def gte(term, opts \\ []) do
+    approximate(term, Keyword.put(opts, :limits, [:upper]))
+  end
 
   @doc """
   Choose one from a (predetermined, limited) list of values.

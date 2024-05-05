@@ -3,13 +3,14 @@ defmodule Myrmidex.Support.DocsGeneratorSchema do
   # A generator schema for making the docs cute.
 
   use Myrmidex.GeneratorSchema
+  alias Myrmidex.Generators
 
   @impl Myrmidex.GeneratorSchema
   def cast(term, _opts) when is_binary(term) do
     if String.printable?(term) and String.length(term) === 1 do
       ascii_generator(term)
     else
-      Myrmidex.Helpers.StreamData.string_stream_data(term)
+      Generators.string(term)
     end
   end
 

@@ -7,7 +7,7 @@ defmodule Myrmidex.GeneratorSchemas.Default do
 
   """
   use Myrmidex.GeneratorSchema
-  alias Myrmidex.Helpers.StreamData, as: SDHelpers
+  alias Myrmidex.Generators
 
   defguardp is_binary_id_field(type) when type in [:binary_id, Ecto.UUID]
   defguardp is_datetime_field(type) when type in [:utc_datetime_usec, :utc_datetime]
@@ -56,7 +56,7 @@ defmodule Myrmidex.GeneratorSchemas.Default do
   def cast(nil, _opts), do: nil_generator()
   def cast(%Date{} = _term, _opts), do: date_generator()
   def cast(%Time{} = _term, _opts), do: time_generator()
-  def cast(%DateTime{} = _term, _opts), do: datetime_generator()
+  def cast(%DateTime{} = _term, _opts), do: datetime_generator(:utc_datetime_usec)
   def cast(%{} = _term, _opts), do: empty_map_generator()
   def cast(term, _opts) when term === [], do: empty_list_generator()
   def cast(term, opts) when is_list(term), do: list_generator(term, opts)
@@ -68,14 +68,21 @@ defmodule Myrmidex.GeneratorSchemas.Default do
   def cast(term, _opts) when is_reference(term), do: ref_generator()
   def cast(term, opts) when is_tuple(term), do: tuple_generator(term, opts)
 
-  defdelegate binary_id_generator(), to: SDHelpers, as: :uuid_stream_data
-  defdelegate datetime_generator(type \\ :utc_datetime), to: SDHelpers, as: :datetime_stream_data
-  defdelegate date_generator, to: SDHelpers, as: :date_stream_data
-  defdelegate enum_generator(values), to: SDHelpers, as: :enum_stream_data
-  defdelegate id_generator, to: SDHelpers, as: :monotonic_integer_stream_data
-  defdelegate string_generator(term), to: SDHelpers, as: :string_stream_data
-  defdelegate time_generator, to: SDHelpers, as: :time_stream_data
-  defdelegate timestamp_generator(type), to: SDHelpers, as: :timestamp_stream_data
+  defdelegate binary_id_generator(), to: Generators, as: :uuid
+  defdelegate date_generator, to: Generators, as: :date
+  defdelegate enum_generator(values), to: Generators, as: :enum
+  defdelegate id_generator, to: Generators, as: :monotonic_integer
+  defdelegate string_generator(term), to: Generators, as: :string
+  defdelegate time_generator, to: Generators, as: :time
+  defdelegate timestamp_generator(type), to: Generators, as: :timestamp
+
+  def datetime_generator(:utc_datetime) do
+    Generators.datetime(precision: :second)
+  end
+
+  def datetime_generator(:utc_datetime_usec) do
+    Generators.datetime()
+  end
 
   def atom_generator, do: SD.atom(:alphanumeric)
   def boolean_generator, do: SD.boolean()

@@ -1,7 +1,6 @@
 defmodule Myrmidex.GeneratorSchemas.DefaultTest do
   use Myrmidex.Support.TestCase, async: true
   alias Myrmidex.GeneratorSchemas.Default, as: DefaultSchema
-  import ExUnitProperties
 
   describe "c:DefaultSchema.cast/3 (via GeneratorSchema.__cast__/3)" do
     property "casts any term to a matching generator" do

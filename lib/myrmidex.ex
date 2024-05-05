@@ -128,8 +128,6 @@ defmodule Myrmidex do
 
   @default_count 2..20
 
-  defdelegate via(stream, via_fun), to: Myrmidex.Helpers.StreamData
-
   @doc """
   The main entry point to working with stream data. Produces stream data from
   `term`, implementing inferred stream data types for fields.
@@ -334,5 +332,16 @@ defmodule Myrmidex do
 
   def affix_many(%{} = term, overrides) when is_mappable(overrides) do
     affix_many(term, @default_count, overrides)
+  end
+
+  @doc """
+  Lazily transform the results of a stream via a function. I.e. just a
+  shorthand for `StreamData.repeatedly/1` wrapped by `StreamData.bind/2`.
+
+  """
+  def via(%SD{} = stream_data, via_fun) when is_function(via_fun, 1) do
+    SD.bind(stream_data, fn term ->
+      SD.repeatedly(fn -> via_fun.(term) end)
+    end)
   end
 end

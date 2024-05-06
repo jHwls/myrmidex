@@ -4,7 +4,7 @@ defmodule Myrmidex.GeneratorSchemas.DefaultTest do
 
   describe "c:DefaultSchema.cast/3 (via GeneratorSchema.__cast__/3)" do
     property "casts any term to a matching generator" do
-      check all term <- SD.term() do
+      check all term <- SD.term(), max_runs: 100 do
         assert %SD{} = stream = DefaultSchema.cast(term, [])
         assert matching_generator?(pick(stream), term)
       end

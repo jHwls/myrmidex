@@ -98,6 +98,8 @@ defmodule Myrmidex.GeneratorSchema do
   end
 
   defp build_generator(%SD{} = generator, term, opts) do
+    # More options to come
+    # credo:disable-for-next-line Credo.Check.Refactor.CondStatements
     cond do
       opts[:limit_generation?] ->
         SD.constant(term)

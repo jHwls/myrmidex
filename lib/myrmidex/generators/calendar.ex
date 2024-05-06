@@ -87,7 +87,9 @@ defmodule Myrmidex.Generators.Calendar do
   end
 
   def timestamp_stream_data(:utc_datetime) do
-    SD.repeatedly(fn -> DateTime.utc_now(:second) end)
+    SD.repeatedly(fn ->
+      DateTime.truncate(DateTime.utc_now(), :second)
+    end)
   end
 
   @doc false

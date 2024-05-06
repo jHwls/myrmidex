@@ -1,10 +1,9 @@
 # Myrmidex
 
-![Tests](https://github.com/jhwls/myrmidex/actions/workflows/test.yml/badge.svg)
-![Coverage](https://github.com/jhwls/myrmidex/actions/workflows/coverage.yml/badge.svg)
-![Credo](https://github.com/jhwls/myrmidex/actions/workflows/credo.yml/badge.svg)
+![ci](https://github.com/jhwls/myrmidex/actions/workflows/ci.yml/badge.svg?event=push)
 [![Hex.pm](https://img.shields.io/hexpm/v/myrmidex.svg)](https://hex.pm/packages/myrmidex)
 [![Documentation](https://img.shields.io/badge/docs-grey)](https://hexdocs.pm/myrmidex)
+[![coverage](https://codecov.io/gh/jHwls/myrmidex/graph/badge.svg?token=LKU73RD6E6)](https://codecov.io/gh/jHwls/myrmidex)
 
 A light wrapper around `StreamData`. Generate any data on the fly, or model
 the underlying types and common fields of domain-specific structs or schemas,

@@ -5,7 +5,7 @@ defmodule Myrmidex.ReadmeTest do
   test "readme version and mix.exs version match" do
     readme_md = File.read!(Path.join(__DIR__, "../README.md"))
     version = Keyword.get(Mix.Project.config(), :version)
-    assert version === "0.2.0"
+    assert version === "0.3.0"
     assert readme_md =~ ~s({:myrmidex, "~> #{version}", only: [:test, :dev]})
   end
 end

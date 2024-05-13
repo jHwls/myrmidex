@@ -1,7 +1,7 @@
 defmodule Myrmidex.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @repo_url "https://github.com/jhwls/myrmidex"
 
   def project do
@@ -38,7 +38,8 @@ defmodule Myrmidex.MixProject do
         ignore_warnings: ".dialyzer/dialyzer-ignore.exs",
         list_unused_filters: true,
         flags: [
-          :no_opaque
+          # :no_opaque
+          #
         ]
       ]
     ]

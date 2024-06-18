@@ -48,8 +48,13 @@ defmodule Myrmidex.Generators do
       ...> Ecto.UUID.equal?(Myrmidex.one(stream), Myrmidex.one(stream))
       false
 
+      iex> stream = Myrmidex.Generators.uuid(prefix: "cus_")
+      ...> Regex.match?(~r|^cus_|, Myrmidex.one(stream))
+      true
+
   """
   defdelegate uuid, to: Generators.Binary, as: :uuid_stream_data
+  defdelegate uuid(opts), to: Generators.Binary, as: :uuid_stream_data
 
   @doc """
   Generate monotonically increasing integer data.

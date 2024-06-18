@@ -9,6 +9,10 @@ defmodule Myrmidex.Generators.Binary do
     SD.repeatedly(&Ecto.UUID.autogenerate/0)
   end
 
+  def uuid_stream_data(opts) do
+    Myrmidex.via(uuid_stream_data(), &(opts[:prefix] <> &1))
+  end
+
   @doc false
   def string_stream_data(string) when is_binary(string) do
     cond do

@@ -1,5 +1,6 @@
 defmodule Myrmidex.FactoryTest do
   use Myrmidex.Case, async: true
+  import ExUnit.CaptureLog
   alias __MODULE__.{TestFactory, TestStreamOnlyFactory}
   alias Myrmidex.Support.Fixtures.EctoSchema
 
@@ -19,7 +20,7 @@ defmodule Myrmidex.FactoryTest do
              |> Myrmidex.one()
   end
 
-  test "imports &attrs/3" do
+  test "imports &attrs/3 (deprecated)" do
     assert [%{price: price} = attrs, %{price: another_price}] =
              TestFactory.attrs(%EctoSchema{}, 2)
 
@@ -33,7 +34,7 @@ defmodule Myrmidex.FactoryTest do
     assert {:ok, %EctoSchema{}} =
              %EctoSchema{}
              |> TestFactory.to_stream()
-             |> TestFactory.persist(%EctoSchema{})
+             |> TestFactory.persist(%EctoSchema{}, 1)
   end
 
   test "raises usefully when no matching &insert/2 impl" do

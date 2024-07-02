@@ -31,6 +31,11 @@ defmodule Myrmidex.Opts do
               type: :keyword_list,
               default: [max_length: 30],
               doc: "StreamData options for list generators."
+            ],
+            default_many: [
+              type: {:or, [:pos_integer, {:struct, Range}]},
+              default: 2..20,
+              doc: "The default count for many operations."
             ]
           )
 

@@ -127,8 +127,6 @@ defmodule Myrmidex do
   alias Myrmidex.Helpers
   alias StreamData, as: SD
 
-  @default_count 2..20
-
   @doc """
   The main entry point to working with stream data. Produces stream data from
   `term`, implementing inferred stream data types for fields.
@@ -223,7 +221,13 @@ defmodule Myrmidex do
       true
 
   """
-  def many(term, count \\ @default_count, opts \\ [])
+  def many(term, count \\ nil, opts \\ [])
+
+  def many(term, nil, opts) do
+    opts = Myrmidex.Opts.validate!(opts)
+    count = Keyword.get(opts, :default_many)
+    many(term, count, opts)
+  end
 
   def many(term, %Range{first: min, last: max}, opts) do
     many(term, Enum.random(min..max), opts)
@@ -330,7 +334,10 @@ defmodule Myrmidex do
   Same as `affix/2` but affixes a list of `term`.
 
   """
-  def affix_many(%{} = term, count, overrides) when is_mappable(overrides) do
+  def affix_many(%{} = term, count, overrides, opts \\ []) when is_mappable(overrides) do
+    opts = Myrmidex.Opts.validate!(opts)
+    count = count || Keyword.get(opts, :default_many)
+
     overrides
     |> Map.new(fn {field, value} ->
       stream =
@@ -341,10 +348,6 @@ defmodule Myrmidex do
       {field, stream}
     end)
     |> then(&affix(term, &1))
-  end
-
-  def affix_many(%{} = term, overrides) when is_mappable(overrides) do
-    affix_many(term, @default_count, overrides)
   end
 
   @doc """

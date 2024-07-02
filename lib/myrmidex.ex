@@ -334,7 +334,7 @@ defmodule Myrmidex do
   Same as `affix/2` but affixes a list of `term`.
 
   """
-  def affix_many(%{} = term, count, overrides, opts \\ []) when is_mappable(overrides) do
+  def affix_many(%{} = term, overrides, count \\ nil, opts \\ []) when is_mappable(overrides) do
     opts = Myrmidex.Opts.validate!(opts)
     count = count || Keyword.get(opts, :default_many)
 

@@ -108,16 +108,20 @@ defmodule Myrmidex.Factory do
       end
 
       @doc "Build a stream and take one or many attrs"
+      @doc deprecated: "Use Myrmidex.Setup macros instead."
+      @deprecated "Use Myrmidex.Setup macros instead."
       def attrs(term, count \\ 1, opts \\ []) do
         term
         |> to_stream(opts)
         |> Myrmidex.many(count)
       end
 
-      @doc "Pass a stream to your datasource via the `insert/1` callback"
-      def persist(%SD{} = stream, struct_mod, count \\ 1) do
+      @doc "Pass a stream to your datastore via `c:Myrmidex.Factory.insert/2`."
+      def persist(%mod{} = stream, struct_mod, count \\ nil, opts \\ [])
+          when mod === SD
+          when mod === Stream do
         stream
-        |> Myrmidex.many(count)
+        |> Myrmidex.many(count, opts)
         |> then(&Myrmidex.Factory.__insert__(__MODULE__, struct_mod, &1))
       end
     end

@@ -1,5 +1,5 @@
 defmodule Myrmidex.Generators.CalendarTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   alias Myrmidex.Generators
 
   describe "Generators.Calendar.time_stream_data/0" do

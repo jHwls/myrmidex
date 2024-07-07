@@ -104,6 +104,7 @@ defmodule Myrmidex.Generators.Calendar do
       date_stream_data({year, month, day}),
       time_stream_data({hour, minute, second, microsecond})
     }
+    |> SD.tuple()
     |> SD.bind(fn {date, time} ->
       SD.constant(DateTime.new!(date, time))
     end)
@@ -121,6 +122,7 @@ defmodule Myrmidex.Generators.Calendar do
       Generators.Number.integer_stream_data(year),
       Generators.Number.integer_stream_data(month)
     }
+    |> SD.tuple()
     |> SD.bind(fn {year, month} ->
       {
         SD.constant(year),
@@ -160,6 +162,7 @@ defmodule Myrmidex.Generators.Calendar do
       Generators.Number.integer_stream_data(second),
       microsecond_stream_data(microsecond)
     }
+    |> SD.tuple()
     |> SD.bind(fn
       {hour, minute, second, nil} ->
         SD.repeatedly(fn -> Time.new!(hour, minute, second) end)
@@ -170,6 +173,9 @@ defmodule Myrmidex.Generators.Calendar do
   end
 
   @doc false
+  @spec microsecond_stream_data(nil) :: SD.t(nil)
+  @spec microsecond_stream_data({pos_integer(), atom()}) :: SD.t(pos_integer())
+  @spec microsecond_stream_data(pos_integer()) :: SD.t(pos_integer())
   def microsecond_stream_data(nil), do: SD.constant(nil)
 
   def microsecond_stream_data({microsecond, precision}) do

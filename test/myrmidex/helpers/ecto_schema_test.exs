@@ -1,5 +1,5 @@
 defmodule Myrmidex.Helpers.EctoSchemaTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   alias Myrmidex.Helpers
   alias Myrmidex.Support.Fixtures.{EctoSchema, EmbeddedSchema}
 

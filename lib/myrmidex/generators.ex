@@ -190,12 +190,12 @@ defmodule Myrmidex.Generators do
 
   ### Examples
 
-      iex> stream = Myrmidex.Generators.approximate(10, scale: 100)
+      iex> stream = Myrmidex.Generators.approximate!(10, scale: 100)
       ...> int = Myrmidex.one(stream)
       ...> int >= -90 and int <= 110
       true
 
-      iex> stream = Myrmidex.Generators.approximate(Date.utc_today(), limits: [:upper])
+      iex> stream = Myrmidex.Generators.approximate!(Date.utc_today(), limits: [:upper])
       ...> date = Myrmidex.one(stream)
       ...> Date.compare(date, Date.utc_today()) in [:gt, :eq]
       true
@@ -205,9 +205,9 @@ defmodule Myrmidex.Generators do
   #{NimbleOptions.docs(Generators.Approximate.schema())}
 
   """
-  defdelegate approximate(term, opts \\ []),
+  defdelegate approximate!(term, opts \\ []),
     to: Generators.Approximate,
-    as: :approximate_stream_data
+    as: :approximate_stream_data!
 
   @doc """
   Generate data that is quantitavely or chronologically less than or equal to
@@ -217,13 +217,13 @@ defmodule Myrmidex.Generators do
 
   ### Examples
 
-      iex> stream = Myrmidex.Generators.lte(10)
+      iex> stream = Myrmidex.Generators.lte!(10)
       ...> Myrmidex.one(stream) <= 10
       true
 
   """
-  def lte(term, opts \\ []) do
-    approximate(term, Keyword.put(opts, :limits, [:lower]))
+  def lte!(term, opts \\ []) do
+    approximate!(term, Keyword.put(opts, :limits, [:lower]))
   end
 
   @doc """
@@ -234,13 +234,13 @@ defmodule Myrmidex.Generators do
 
   ### Examples
 
-      iex> stream = Myrmidex.Generators.gte(10)
+      iex> stream = Myrmidex.Generators.gte!(10)
       ...> Myrmidex.one(stream) >= 10
       true
 
   """
-  def gte(term, opts \\ []) do
-    approximate(term, Keyword.put(opts, :limits, [:upper]))
+  def gte!(term, opts \\ []) do
+    approximate!(term, Keyword.put(opts, :limits, [:upper]))
   end
 
   @doc """

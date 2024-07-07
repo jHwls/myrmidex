@@ -1,10 +1,10 @@
 defmodule MyrmidexTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   doctest Myrmidex, except: [:moduledoc]
 
   alias Myrmidex.Support.Fixtures.{EctoSchema, TestPumpkin}
 
-  describe "Myrmidex.to_stream/1 with an Ecto schema" do
+  describe "Myrmidex.to_stream/2 with an Ecto schema" do
     @opts []
     test "provides sensible defaults via reflection" do
       assert %SD{} = stream_data = Myrmidex.to_stream(%EctoSchema{}, @opts)
@@ -98,7 +98,7 @@ defmodule MyrmidexTest do
     end
   end
 
-  describe "Myrmidex.to_stream/1 with a map" do
+  describe "Myrmidex.to_stream/2 with a map" do
     @term %{string: "String", number: 1.23, map: %{one: 1, two: 2}, empty_map: %{}}
     @opts []
     test "provides sensible defaults via matching" do
@@ -133,6 +133,15 @@ defmodule MyrmidexTest do
     test "matches key type of the term by default" do
       assert %StreamData{} = stream_data = Myrmidex.to_stream(@term, @opts)
       assert %{"key" => _} = pick(stream_data)
+    end
+  end
+
+  describe "Myrmidex.to_stream/2 with any term" do
+    @opts []
+    test "returns stream_data" do
+      stream_data = StreamData.constant(1)
+      assert %StreamData{} = stream_data = Myrmidex.to_stream(stream_data, @opts)
+      assert 1 = pick(stream_data)
     end
   end
 
@@ -263,15 +272,21 @@ defmodule MyrmidexTest do
     end
   end
 
-  describe "Myrmidex.via/2" do
+  describe "Myrmidex.via!/2" do
     test "repeatedly applies a 1-arity function to the result of a stream" do
       assert %SD{} =
                stream_data =
                1
                |> Myrmidex.to_stream(limit_generation?: true)
-               |> Myrmidex.via(&(&1 * 2))
+               |> Myrmidex.via!(&(&1 * 2))
 
       assert Enum.all?(Myrmidex.many(stream_data), &(&1 === 2))
+    end
+
+    test "raises when the 1st argument is not a stream" do
+      assert_raise ArgumentError, "first argument must be stream data; received `1`", fn ->
+        Myrmidex.via!(1, &(&1 * 2))
+      end
     end
   end
 end

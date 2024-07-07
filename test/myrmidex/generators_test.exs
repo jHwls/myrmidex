@@ -1,4 +1,4 @@
 defmodule Myrmidex.GeneratorsTest do
-  use Myrmidex.Support.TestCase
+  use Myrmidex.Case
   doctest Myrmidex.Generators
 end

@@ -1,5 +1,5 @@
 defmodule Myrmidex.FactoryTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   alias __MODULE__.{TestFactory, TestStreamOnlyFactory}
   alias Myrmidex.Support.Fixtures.EctoSchema
 

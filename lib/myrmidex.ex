@@ -124,6 +124,7 @@ defmodule Myrmidex do
 
   """
   import Myrmidex.GeneratorSchema, only: [is_mappable: 1]
+  alias Myrmidex.Helpers
   alias StreamData, as: SD
 
   @default_count 2..20
@@ -143,12 +144,16 @@ defmodule Myrmidex do
 
   """
   def to_stream(term, opts \\ []) do
-    {generator_schema, opts} =
-      opts
-      |> Myrmidex.Opts.validate!()
-      |> Keyword.pop!(:generator_schema)
+    if Helpers.StreamData.stream_data?(term) do
+      term
+    else
+      {generator_schema, opts} =
+        opts
+        |> Myrmidex.Opts.validate!()
+        |> Keyword.pop!(:generator_schema)
 
-    Myrmidex.GeneratorSchema.__cast__(generator_schema, term, opts)
+      Myrmidex.GeneratorSchema.__cast__(generator_schema, term, opts)
+    end
   end
 
   @doc """
@@ -166,30 +171,40 @@ defmodule Myrmidex do
   """
   def one(term, opts \\ [])
 
-  def one(%SD{} = stream_data, _opts) do
-    stream_data
-    |> SD.resize(Enum.random(1..100))
-    |> Enum.take(1)
-    |> List.first()
-  end
-
   def one(%Stream{} = stream, _opts) do
-    stream
-    |> Enum.take(1)
-    |> List.first()
-  end
-
-  def one(%mod{} = term, opts) do
-    term
-    |> to_stream(opts)
-    |> via(&struct!(mod, &1))
-    |> one()
+    take_one(stream)
   end
 
   def one(term, opts) do
-    term
-    |> to_stream(opts)
-    |> one()
+    cond do
+      Helpers.StreamData.stream_data?(term) ->
+        term
+        |> resize_stream()
+        |> take_one()
+
+      is_struct(term) ->
+        term
+        |> to_stream(opts)
+        |> resize_stream()
+        |> via!(&struct!(term.__struct__, &1))
+        |> take_one()
+
+      true ->
+        term
+        |> to_stream(opts)
+        |> resize_stream()
+        |> take_one()
+    end
+  end
+
+  defp take_one(stream) do
+    stream
+    |> Enum.take(1)
+    |> hd()
+  end
+
+  defp resize_stream(stream, multiplier \\ 1) do
+    SD.resize(stream, Enum.random(1..(100 * multiplier)))
   end
 
   @doc """
@@ -214,27 +229,30 @@ defmodule Myrmidex do
     many(term, Enum.random(min..max), opts)
   end
 
-  def many(%SD{} = stream_data, count, _opts) when is_integer(count) do
-    stream_data
-    |> SD.resize(Enum.random(1..(100 * count)))
-    |> Enum.take(count)
-  end
-
   def many(%Stream{} = stream, count, _opts) when is_integer(count) do
     Enum.take(stream, count)
   end
 
-  def many(%mod{} = term, count, opts) when is_integer(count) do
-    term
-    |> to_stream(opts)
-    |> via(&struct!(mod, &1))
-    |> many(count)
-  end
-
   def many(term, count, opts) when is_integer(count) do
-    term
-    |> to_stream(opts)
-    |> many(count)
+    cond do
+      Helpers.StreamData.stream_data?(term) ->
+        term
+        |> resize_stream(count)
+        |> Enum.take(count)
+
+      is_struct(term) ->
+        term
+        |> to_stream()
+        |> resize_stream(count)
+        |> via!(&struct!(term.__struct__, &1))
+        |> Enum.take(count)
+
+      true ->
+        term
+        |> to_stream(opts)
+        |> resize_stream(count)
+        |> Enum.take(count)
+    end
   end
 
   @doc """
@@ -249,8 +267,13 @@ defmodule Myrmidex do
       true
 
   """
-  def fix(%SD{} = stream_data), do: stream_data
-  def fix(term), do: SD.constant(term)
+  def fix(term) do
+    if Helpers.StreamData.stream_data?(term) do
+      term
+    else
+      SD.constant(term)
+    end
+  end
 
   @doc """
   Given `term` and a compatible `term` of overrides, map values via
@@ -271,13 +294,7 @@ defmodule Myrmidex do
   def affix(%{} = term, overrides) when is_mappable(overrides) do
     overrides
     |> maybe_normalize_keys(key_type(term))
-    |> Map.new(fn
-      {_field, %SD{}} = field_tuple ->
-        field_tuple
-
-      {field, value} ->
-        {field, fix(value)}
-    end)
+    |> Map.new(fn {field, value} -> {field, fix(value)} end)
     |> then(&Map.merge(term, &1))
   end
 
@@ -315,17 +332,13 @@ defmodule Myrmidex do
   """
   def affix_many(%{} = term, count, overrides) when is_mappable(overrides) do
     overrides
-    |> Map.new(fn
-      {field, %SD{} = stream} ->
-        {field, SD.list_of(stream, length: count)}
+    |> Map.new(fn {field, value} ->
+      stream =
+        value
+        |> fix()
+        |> SD.list_of(length: count)
 
-      {field, value} ->
-        stream =
-          value
-          |> fix()
-          |> SD.list_of(length: count)
-
-        {field, stream}
+      {field, stream}
     end)
     |> then(&affix(term, &1))
   end
@@ -339,9 +352,5 @@ defmodule Myrmidex do
   shorthand for `StreamData.repeatedly/1` wrapped by `StreamData.bind/2`.
 
   """
-  def via(%SD{} = stream_data, via_fun) when is_function(via_fun, 1) do
-    SD.bind(stream_data, fn term ->
-      SD.repeatedly(fn -> via_fun.(term) end)
-    end)
-  end
+  defdelegate via!(stream_data, via_fun), to: Helpers.StreamData, as: :bind_repeatedly!
 end

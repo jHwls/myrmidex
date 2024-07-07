@@ -1,4 +1,4 @@
-defmodule Myrmidex.Support.TestCase do
+defmodule Myrmidex.Case do
   @moduledoc false
   use ExUnit.CaseTemplate
 
@@ -6,7 +6,7 @@ defmodule Myrmidex.Support.TestCase do
     quote do
       use ExUnitProperties
       alias StreamData, as: SD
-      import Myrmidex.Support.TestCase
+      import Myrmidex.Case
     end
   end
 

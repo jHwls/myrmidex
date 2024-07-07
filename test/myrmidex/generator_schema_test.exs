@@ -1,5 +1,5 @@
 defmodule Myrmidex.GeneratorSchemaTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   alias Myrmidex.GeneratorSchema
   alias Myrmidex.GeneratorSchemas.Default, as: DefaultSchema
   import ExUnitProperties

@@ -1,5 +1,5 @@
 defmodule Myrmidex.GeneratorSchemas.DefaultTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   alias Myrmidex.GeneratorSchemas.Default, as: DefaultSchema
 
   describe "c:DefaultSchema.cast/3 (via GeneratorSchema.__cast__/3)" do

@@ -2,6 +2,7 @@ defmodule Myrmidex.Generators.Binary do
   @moduledoc false
   # String, Atom, and other binary generators.
 
+  alias Myrmidex.Helpers
   alias StreamData, as: SD
 
   @doc false
@@ -10,7 +11,18 @@ defmodule Myrmidex.Generators.Binary do
   end
 
   def uuid_stream_data(opts) do
-    Myrmidex.via(uuid_stream_data(), &(opts[:prefix] <> &1))
+    stream = uuid_stream_data()
+
+    cond do
+      Keyword.has_key?(opts, :prefix) ->
+        Helpers.StreamData.bind_repeatedly!(stream, fn uuid -> opts[:prefix] <> uuid end)
+
+      Keyword.has_key?(opts, :suffix) ->
+        Helpers.StreamData.bind_repeatedly!(stream, fn uuid -> uuid <> opts[:suffix] end)
+
+      true ->
+        stream
+    end
   end
 
   @doc false

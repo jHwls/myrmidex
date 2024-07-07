@@ -2,7 +2,7 @@ defmodule Myrmidex.Generators.Approximate do
   @moduledoc false
   # Generators for data approximate to a given term.
 
-  alias Myrmidex.Generators
+  alias Myrmidex.{Generators, Helpers}
   alias StreamData, as: SD
 
   @schema NimbleOptions.new!(
@@ -30,11 +30,7 @@ defmodule Myrmidex.Generators.Approximate do
   end
 
   @doc false
-  def approximate_stream_data(%SD{} = term, opts) do
-    SD.bind(term, fn term -> approximate_stream_data(term, opts) end)
-  end
-
-  def approximate_stream_data(term, opts) when is_integer(term) do
+  def approximate_stream_data!(term, opts) when is_integer(term) do
     opts = build_opts!(opts, scale: term)
 
     term
@@ -42,7 +38,7 @@ defmodule Myrmidex.Generators.Approximate do
     |> SD.integer()
   end
 
-  def approximate_stream_data(term, opts) when is_float(term) do
+  def approximate_stream_data!(term, opts) when is_float(term) do
     opts = build_opts!(opts, scale: term)
 
     term
@@ -50,7 +46,7 @@ defmodule Myrmidex.Generators.Approximate do
     |> SD.float()
   end
 
-  def approximate_stream_data(%DateTime{} = term, opts) do
+  def approximate_stream_data!(%DateTime{} = term, opts) do
     opts = build_opts!(opts, scale: {:second, 60})
 
     term
@@ -58,7 +54,7 @@ defmodule Myrmidex.Generators.Approximate do
     |> Generators.Calendar.datetime_stream_data()
   end
 
-  def approximate_stream_data(%Date{} = term, opts) do
+  def approximate_stream_data!(%Date{} = term, opts) do
     opts = build_opts!(opts, scale: 7)
 
     term
@@ -66,12 +62,22 @@ defmodule Myrmidex.Generators.Approximate do
     |> Generators.Calendar.date_stream_data()
   end
 
-  def approximate_stream_data(%Time{} = term, opts) do
+  def approximate_stream_data!(%Time{} = term, opts) do
     opts = build_opts!(opts, scale: {:second, 60})
 
     term
     |> erl_calendar_limits(opts)
     |> Generators.Calendar.time_stream_data()
+  end
+
+  def approximate_stream_data!(term, opts) do
+    if Helpers.StreamData.stream_data?(term) do
+      SD.bind(term, fn term -> approximate_stream_data!(term, opts) end)
+    else
+      raise ArgumentError,
+        message:
+          "first argument must be integer, float, Date, Time, or DateTime, or stream data that produces one of these terms: #{inspect(term)}"
+    end
   end
 
   defp float_opts(float, opts) do

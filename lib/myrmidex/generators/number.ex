@@ -5,6 +5,8 @@ defmodule Myrmidex.Generators.Number do
   alias StreamData, as: SD
 
   @doc false
+  @spec integer_stream_data :: SD.t(number())
+  @spec integer_stream_data(term) :: SD.t(number())
   def integer_stream_data, do: SD.integer()
   def integer_stream_data(int) when is_integer(int), do: SD.constant(int)
   def integer_stream_data(%Range{} = range), do: SD.integer(range)
@@ -19,10 +21,9 @@ defmodule Myrmidex.Generators.Number do
     counter_ref = :counters.new(1, [])
     :counters.add(counter_ref, 1, start)
 
-    {
-      integer_stream_data(step)
-    }
-    |> SD.bind(fn {increase} ->
+    step
+    |> integer_stream_data()
+    |> SD.bind(fn increase ->
       SD.repeatedly(fn ->
         :counters.add(counter_ref, 1, increase)
         :counters.get(counter_ref, 1)

@@ -1,5 +1,5 @@
 defmodule Myrmidex.Generators.NumberTest do
-  use Myrmidex.Support.TestCase, async: true
+  use Myrmidex.Case, async: true
   alias Myrmidex.Generators
 
   describe "Generators.Number.integer_stream_data/0 & Generators.Number.integer_stream_data/1" do

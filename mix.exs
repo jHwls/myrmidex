@@ -36,7 +36,6 @@ defmodule Myrmidex.MixProject do
         plt_add_apps: [:ex_unit],
         plt_local_path: ".dialyzer/local_plt",
         plt_core_path: ".dialyzer/core_plt",
-        ignore_warnings: ".dialyzer/dialyzer-ignore.exs",
         list_unused_filters: true
       ]
     ]

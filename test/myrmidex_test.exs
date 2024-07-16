@@ -265,7 +265,7 @@ defmodule MyrmidexTest do
     test "allows specifying a range size" do
       assert %{trades: [4 | _] = trades} =
                %EctoSchema{}
-               |> Myrmidex.affix_many(1..4, %{trades: SD.constant(4)})
+               |> Myrmidex.affix_many(%{trades: SD.constant(4)}, 1..4)
                |> Myrmidex.one()
 
       assert length(trades) < 5

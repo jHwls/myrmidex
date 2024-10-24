@@ -26,10 +26,24 @@ defmodule Myrmidex.GeneratorSchemas.Default do
     timestamp_generator(type)
   end
 
+  def cast_field({_field, {:parameterized, {Ecto.Embedded, %Ecto.Embedded{}}}, _term}, _opts) do
+    nil_generator()
+  end
+
+  # For compatibility with Ecto < 3.12
+  # https://github.com/elixir-ecto/ecto/blob/4f0c990019ee5b5d96721958e226519c2a6ee83f/CHANGELOG.md?plain=1#L81
   def cast_field({_field, {:parameterized, Ecto.Embedded, %Ecto.Embedded{}}, _term}, _opts) do
     nil_generator()
   end
 
+  def cast_field({_field, {:parameterized, {Ecto.Enum, %{mappings: mappings}}}, _term}, _opts) do
+    mappings
+    |> Keyword.keys()
+    |> enum_generator()
+  end
+
+  # For compatibility with Ecto < 3.12
+  # https://github.com/elixir-ecto/ecto/blob/4f0c990019ee5b5d96721958e226519c2a6ee83f/CHANGELOG.md?plain=1#L81
   def cast_field({_field, {:parameterized, Ecto.Enum, %{mappings: mappings}}, _term}, _opts) do
     mappings
     |> Keyword.keys()

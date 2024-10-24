@@ -46,26 +46,27 @@ defmodule Myrmidex.Helpers.EctoSchemaTest do
                  :preference,
                  {
                    :parameterized,
-                   Ecto.Enum,
-                   %{
-                     embed_as: :self,
-                     mappings: ["🎃": "🎃"],
-                     on_cast: %{"🎃" => :"🎃"},
-                     on_dump: %{"🎃": "🎃"},
-                     on_load: %{"🎃" => :"🎃"},
-                     type: :string
-                   }
+                   {Ecto.Enum,
+                    %{
+                      embed_as: :self,
+                      mappings: ["🎃": "🎃"],
+                      on_cast: %{"🎃" => :"🎃"},
+                      on_dump: %{"🎃": "🎃"},
+                      on_load: %{"🎃" => :"🎃"},
+                      type: :string
+                    }}
                  },
                  nil
                },
                {:checkboxes,
-                {:parameterized, Ecto.Embedded,
-                 %Ecto.Embedded{
-                   cardinality: :many,
-                   field: :checkboxes,
-                   owner: Myrmidex.Support.Fixtures.EmbeddedSchema,
-                   related: Myrmidex.Support.Fixtures.EmbeddedSchema.Child
-                 }}, []}
+                {:parameterized,
+                 {Ecto.Embedded,
+                  %Ecto.Embedded{
+                    cardinality: :many,
+                    field: :checkboxes,
+                    owner: Myrmidex.Support.Fixtures.EmbeddedSchema,
+                    related: Myrmidex.Support.Fixtures.EmbeddedSchema.Child
+                  }}}, []}
              ] = Helpers.EctoSchema.build_field_type_term_tuples(%EmbeddedSchema{}, [])
     end
 

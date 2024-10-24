@@ -18,7 +18,7 @@ in `dev` if you want to be able to use in IEx:
 ```elixir
 def deps do
   [
-    {:myrmidex, "~> 0.3.0", only: [:test, :dev]}
+    {:myrmidex, "~> 0.3.1", only: [:test, :dev]}
   ]
 end
 ```

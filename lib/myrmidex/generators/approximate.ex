@@ -151,9 +151,46 @@ defmodule Myrmidex.Generators.Approximate do
   end
 
   defp zip_limits({%mod{}, %mod{}} = limits, opts) do
-    limits
+    case mod do
+      Date -> zip_date_limits(limits)
+      DateTime -> zip_datetime_limits(limits, opts)
+      Time -> zip_time_limits(limits, opts)
+      _ -> zip_generic_limits(limits, opts)
+    end
+  end
+
+  defp zip_date_limits({start_date, end_date}) do
+    [
+      {:year, start_date.year..end_date.year},
+      {:month, start_date.month..end_date.month},
+      {:day, 1..31}
+    ]
+  end
+
+  defp zip_datetime_limits({start_dt, end_dt}, opts) do
+    date_limits = zip_date_limits({DateTime.to_date(start_dt), DateTime.to_date(end_dt)})
+    time_limits = zip_time_limits({start_dt, end_dt}, opts)
+
+    date_limits ++ time_limits
+  end
+
+  defp zip_time_limits({start_time, end_time}, opts) do
+    {start_time, end_time}
     |> Tuple.to_list()
-    |> Stream.map(&Map.take(&1, keys(mod)))
+    |> Stream.map(&Map.take(&1, keys(Time)))
+    |> Stream.zip_with(fn
+      [{field, {lower, _}}, {field, {upper, _}}] ->
+        {field, Range.new(lower, upper)}
+
+      [{field, lower}, {field, upper}] ->
+        {field, Range.new(lower, upper)}
+    end)
+    |> Enum.reject(fn {key, _limit} -> drop_opt?(key, opts[:scale]) end)
+  end
+
+  defp zip_generic_limits({start, finish}, opts) do
+    [start, finish]
+    |> Stream.map(&Map.take(&1, keys(start.__struct__)))
     |> Stream.zip_with(fn
       [{field, {lower, _}}, {field, {upper, _}}] ->
         {field, Range.new(lower, upper)}

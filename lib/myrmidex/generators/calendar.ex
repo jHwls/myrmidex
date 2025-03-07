@@ -132,18 +132,24 @@ defmodule Myrmidex.Generators.Calendar do
     end)
     |> SD.bind(fn {year, month, day} ->
       SD.repeatedly(fn ->
-        Date.new!(year, month, day)
+        case Date.new(year, month, day) do
+          {:ok, date} -> date
+
+          {:error, reason} ->
+            raise "#{reason} error in date_stream_data when creating new date within Myrmidex. Date: #{year}-#{month}-#{day}"
+        end
       end)
     end)
   end
 
   @doc false
   def day_stream_data(%Range{last: last} = day, month, year) do
-    last =
-      year
-      |> Date.new!(month, 1)
-      |> Date.days_in_month()
-      |> min(last)
+   last = case Date.new(year, month, 1) do
+     {:ok, date} -> date |> Date.days_in_month() |> min(last)
+
+    {:error, reason} ->
+      raise "#{reason} error in day when creating new date within Myrmidex. Date: #{year}-#{month}-#{day}"
+   end
 
     Generators.Number.integer_stream_data(%Range{day | last: last})
   end

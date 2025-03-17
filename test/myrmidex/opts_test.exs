@@ -39,6 +39,12 @@ defmodule Myrmidex.OptsTest do
                  type: :keyword_list,
                  default: [max_length: 30],
                  doc: _
+               ],
+               default_many: [
+                 required: false,
+                 type: {:or, [:pos_integer, {:struct, Range}]},
+                 default: 2..20,
+                 doc: _
                ]
              ]
            } = Myrmidex.Opts.schema()
